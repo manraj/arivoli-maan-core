@@ -171,20 +171,32 @@ String timestamp = DateTimeUtils.formatInstant(DateTimeUtils.nowUtc());
 
 ## Publish to Maven Central
 
-Configure credentials and signing keys as environment variables or Gradle properties:
+Uses the [vanniktech maven-publish plugin](https://vanniktech.github.io/gradle-maven-publish-plugin/central/) with Sonatype Central Portal.
+
+Configure secrets in `~/.gradle/gradle.properties` (never commit them):
 
 ```properties
-mavenCentralUsername=your-username
-mavenCentralPassword=your-password
-signingKey=your-armored-private-key
-signingPassword=your-key-password
+mavenCentralUsername=YOUR_CENTRAL_TOKEN_USERNAME
+mavenCentralPassword=YOUR_CENTRAL_TOKEN_PASSWORD
+
+# Option A — local GPG (recommended if gpg is installed)
+signing.keyId=LAST_8_CHARS_OF_KEY_ID
+signing.password=YOUR_GPG_PASSPHRASE
+signing.secretKeyRingFile=C:/Users/YOUR_USER/.gnupg/secring.gpg
+
+# Option B — in-memory armored private key (alternative to Option A)
+# signingInMemoryKey=-----BEGIN PGP PRIVATE KEY BLOCK-----...
+# signingInMemoryKeyPassword=YOUR_GPG_PASSPHRASE
 ```
 
-Then publish:
+Publish **core first**, then the other libraries:
 
 ```bash
-./gradlew publish
+./gradlew clean build
+./gradlew publishToMavenCentral
 ```
+
+Then open [Central Portal Deployments](https://central.sonatype.com/publishing/deployments) and click **Publish**.
 
 ## Design Principles
 

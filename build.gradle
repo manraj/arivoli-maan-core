@@ -1,7 +1,7 @@
 plugins {
     id 'java-library'
-    id 'maven-publish'
     id 'signing'
+    id 'com.vanniktech.maven.publish' version '0.37.0'
 }
 
 group = 'com.arivoliacademy'
@@ -11,8 +11,6 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
-    withSourcesJar()
-    withJavadocJar()
 }
 
 repositories {
@@ -43,60 +41,55 @@ tasks.named('javadoc') {
     }
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            from components.java
+mavenPublishing {
+    // Uploads to Sonatype Central Portal (manual Publish click in the website)
+    publishToMavenCentral()
+    signAllPublications()
 
-            pom {
-                name = 'arivoli-maan-core'
-                description = 'Lightweight reusable core framework library for Spring Boot applications'
-                url = 'https://github.com/arivoliacademy/arivoli-maan-core'
+    coordinates(group.toString(), 'arivoli-maan-core', version.toString())
 
-                licenses {
-                    license {
-                        name = 'The Apache License, Version 2.0'
-                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id = 'arivoliacademy'
-                        name = 'Arivoli Academy'
-                        email = 'dev@arivoliacademy.com'
-                    }
-                }
-
-                scm {
-                    connection = 'scm:git:git://github.com/arivoliacademy/arivoli-maan-core.git'
-                    developerConnection = 'scm:git:ssh://github.com/arivoliacademy/arivoli-maan-core.git'
-                    url = 'https://github.com/arivoliacademy/arivoli-maan-core'
-                }
+    pom {
+        name = 'arivoli-maan-core'
+        description = 'Lightweight reusable core framework library for Spring Boot applications'
+        inceptionYear = '2026'
+        url = 'https://github.com/manraj/arivoli-maan-core'
+        licenses {
+            license {
+                name = 'The Apache License, Version 2.0'
+                url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution = 'repo'
             }
         }
-    }
-
-    repositories {
-        maven {
-            name = 'MavenCentral'
-            url = version.endsWith('SNAPSHOT')
-                    ? uri('https://central.sonatype.com/repository/maven-snapshots/')
-                    : uri('https://central.sonatype.com/repository/maven-releases/')
-            credentials {
-                username = findProperty('mavenCentralUsername') ?: System.getenv('MAVEN_CENTRAL_USERNAME')
-                password = findProperty('mavenCentralPassword') ?: System.getenv('MAVEN_CENTRAL_PASSWORD')
+        developers {
+            developer {
+                id = 'manraj'
+                name = 'Manraj'
+                url = 'https://github.com/manraj'
             }
+        }
+        scm {
+            url = 'https://github.com/manraj/arivoli-maan-core'
+            connection = 'scm:git:git://github.com/manraj/arivoli-maan-core.git'
+            developerConnection = 'scm:git:ssh://git@github.com/manraj/arivoli-maan-core.git'
         }
     }
 }
 
-signing {
-    def signingKey = findProperty('signingKey') ?: System.getenv('SIGNING_KEY')
-    def signingPassword = findProperty('signingPassword') ?: System.getenv('SIGNING_PASSWORD')
-
-    if (signingKey && signingPassword) {
-        useInMemoryPgpKeys(signingKey, signingPassword)
-        sign publishing.publications.maven
+// vanniktech only auto-wires signingInMemoryKey*; also accept signingKey/signingPassword.
+afterEvaluate {
+    def key = findProperty('signingInMemoryKey') ?: findProperty('signingKey') ?: System.getenv('ORG_GRADLE_PROJECT_signingInMemoryKey')
+    def password = findProperty('signingInMemoryKeyPassword') ?: findProperty('signingPassword') ?: System.getenv('ORG_GRADLE_PROJECT_signingInMemoryKeyPassword')
+    if (password == null) {
+        password = ''
+    }
+    if (!key) {
+        throw new GradleException(
+            "Missing GPG signing key. Set signingInMemoryKey (preferred) or signingKey in ~/.gradle/gradle.properties"
+        )
+    }
+    // Expand literal \n so multi-line ASCII-armored keys work in gradle.properties
+    def armored = key.toString().replace('\\n', '\n').replace('\r', '')
+    signing {
+        useInMemoryPgpKeys(armored, password.toString())
     }
 }
