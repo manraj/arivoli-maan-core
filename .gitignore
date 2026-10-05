@@ -1,6 +1,8 @@
 # Gradle
 .gradle/
 build/
+bin/
+out/
 !gradle/wrapper/gradle-wrapper.jar
 
 # IDE
@@ -25,5 +27,4 @@ gradle.properties
 *.asc
 
 # Test / coverage
-out/
 *.log
